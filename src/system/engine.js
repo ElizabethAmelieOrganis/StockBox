@@ -39,9 +39,9 @@ export class StockMarketEngine {
     //计算价格变化(价格变化由供需失衡决定)
     const imbalance = (totalDemand - totalSupply) / 100 //计算供需失衡比例(这里简单取100作为除数,可以根据需求调整)
     //根据供需失衡比例，计算价格变化
-    //计算方法为:新价格=旧价格*(1+失衡比例*0.1)
+    //计算方法为:新价格=旧价格*(1+失衡比例*0.1)(向下取整)
     //这里简单取0.1作为调整系数,防止价格过于动荡(可以根据需求调整)
-    this.price = Math.max(1, Math.min(300, this.price * (1 + imbalance * 0.1)))
+    this.price = Math.floor(Math.max(1, this.price * (1 + imbalance * 0.1)))
     //将新价格添加到价格历史记录中
     this.priceHistory.push(this.price)
 
@@ -62,5 +62,13 @@ export class StockMarketEngine {
         agent.stock += tradeVolume //更新智能体股票数量(减少卖出数量,因为此处tradeVolume自带正负，直接相加即可)
       }
     })
+    const uncertaintyFactor = Math.random()
+    if (uncertaintyFactor < 0.05) {
+      this.price = this.price * 0.01
+      console.log('Black Swan Event: Price Drop to 1%')
+    } else if (uncertaintyFactor > 0.9) {
+      this.price = this.price * 3
+      console.log('Big Bull Market: Price Up to 300%')
+    }
   }
 }
