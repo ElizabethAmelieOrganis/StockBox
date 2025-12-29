@@ -21,7 +21,7 @@ export class ValueAgent extends Agent {
     if (this.noiseOffset > 0.5) {
       //如果噪声大于0.5,则买入股票
       //计算可购买的股票数量,方法为:购买数=(现金的20%的整数部分/当前股票价格)(向下取整)
-      return Math.floor(Math.floor(this.cash * 0.2) / price)
+      return Math.floor(Math.floor(this.cash * 0.1) / price)
     } else {
       //如果噪声小于等于0.5,则不购买股票
       return 0

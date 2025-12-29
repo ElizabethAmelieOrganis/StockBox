@@ -1,7 +1,7 @@
 <template>
   <div
     class="AppContainer"
-    style="display: flex; flex-direction: column; align-items: center; font-family: monospace"
+    style="display: flex; flex-direction: column; align-items: center;"
   >
     <div
       class="AppTitle"
@@ -40,8 +40,8 @@
     ></div>
     <div style="flex: 1">
       <h3>💰 Agent Asset Rankings</h3>
-      <el-table :data="sortedAgents" stripe border size="small" style="width: 100%">
-        <el-table-column prop="id" label="ID" width="80" />
+      <el-table :data="sortedAgents" stripe border size="default" fit="true" style="width: 100%" max-height="350">
+        <el-table-column prop="id" label="ID" width="180" />
         <el-table-column label="Type" width="140">
           <template #default="{ row }">
             {{
@@ -59,7 +59,7 @@
           <template #default="{ row }">¥{{ row.cash.toFixed(0) }}</template>
         </el-table-column>
         <el-table-column prop="stock" label="Stock" width="120" align="right" />
-        <el-table-column label="Total Asset" align="right">
+        <el-table-column label="Total Asset" align="right" width="140">
           <template #default="{ row }"
             >¥{{ (row.cash + row.stock * engine.price).toFixed(0) }}</template
           >
