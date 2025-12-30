@@ -42,9 +42,10 @@
         stripe
         border
         size="default"
-        fit="true"
+        :fit="true"
         style="width: 100%"
-        max-height="350"
+        :max-height="350"
+        row-key="id"
       >
         <el-table-column prop="id" label="ID" width="180" />
         <el-table-column label="Type" width="140">
@@ -69,6 +70,11 @@
             >¥{{ (row.cash + row.stock * engine.price).toFixed(0) }}</template
           >
         </el-table-column>
+        <el-table-column label="Emotion" width="120" align="right">
+          <template #default="{ row }">
+            {{ Number.isFinite(row.emotion) ? row.emotion.toFixed(0) : '0' }}
+          </template>
+        </el-table-column>
       </el-table>
     </div>
   </div>
@@ -87,7 +93,7 @@ let chartInstance = null
 
 onMounted(() => {
   chartInstance = echarts.init(document.getElementById('chart'))
-  engine.value.initAgents(20)
+  engine.value.initAgents(25)
   updateChart()
 })
 
