@@ -2,7 +2,7 @@ import { Agent } from './agent.base.js'
 
 //基于基本agent的价值策略类
 export class ValueAgent extends Agent {
-  constructor(id, type = 'value', initialCash = 10000) {
+  constructor(id, type = 'value', initialCash = 1000) {
     super(id, type, initialCash)
   }
   //价值策略决策,简单版本

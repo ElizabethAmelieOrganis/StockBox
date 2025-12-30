@@ -1,8 +1,5 @@
 <template>
-  <div
-    class="AppContainer"
-    style="display: flex; flex-direction: column; align-items: center;"
-  >
+  <div class="AppContainer" style="display: flex; flex-direction: column; align-items: center">
     <div
       class="AppTitle"
       style="display: flex; flex-direction: column; align-items: center; font-family: monospace"
@@ -22,8 +19,8 @@
         margin-bottom: 20px;
       "
     >
-      <button @click="runStep" :disabled="running">Run A Step</button>
-      <button @click="toggleRun">{{ running ? 'Stop' : 'Start' }}</button>
+      <el-button @click="runStep" :disabled="running">Run A Step</el-button>
+      <el-button @click="toggleRun">{{ running ? 'Stop' : 'Start' }}</el-button>
       <span>Price:￥{{ engine.price.toFixed(2) }}</span> |Day
       <span>{{ engine.day }}</span>
     </div>
@@ -40,7 +37,15 @@
     ></div>
     <div style="flex: 1">
       <h3>💰 Agent Asset Rankings</h3>
-      <el-table :data="sortedAgents" stripe border size="default" fit="true" style="width: 100%" max-height="350">
+      <el-table
+        :data="sortedAgents"
+        stripe
+        border
+        size="default"
+        fit="true"
+        style="width: 100%"
+        max-height="350"
+      >
         <el-table-column prop="id" label="ID" width="180" />
         <el-table-column label="Type" width="140">
           <template #default="{ row }">
@@ -82,7 +87,7 @@ let chartInstance = null
 
 onMounted(() => {
   chartInstance = echarts.init(document.getElementById('chart'))
-  engine.value.initAgents(5)
+  engine.value.initAgents(20)
   updateChart()
 })
 
@@ -161,7 +166,7 @@ function runStep() {
 function toggleRun() {
   running.value = !running.value
   if (running.value) {
-    timer = setInterval(runStep, 300) // 每300ms运行一步
+    timer = setInterval(runStep, 1000) // 每1000ms运行一步
   } else {
     clearInterval(timer)
   }

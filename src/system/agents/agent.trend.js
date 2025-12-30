@@ -2,7 +2,7 @@ import { Agent } from './agent.base.js'
 
 //基于基本agent的趋势策略类
 export class TrendAgent extends Agent {
-  constructor(id, type = 'trend', initialCash = 10000) {
+  constructor(id, type = 'trend', initialCash = 1000) {
     super(id, type, initialCash)
   }
   //趋势价值策略,简单版本
@@ -29,9 +29,9 @@ export class TrendAgent extends Agent {
       //负号代表卖出
       return -Math.floor(this.stock * this.noiseOffset)
     }
-    //变化率过小,随机卖出收回成本(0~0.5)
+    //变化率过小,随机卖出收回成本(0~0.2)
     if (priceTrend < 0.05 && priceTrend > -0.05) {
-      return -Math.floor(this.stock * (this.noiseOffset / 2))
+      return -Math.floor(this.stock * (this.noiseOffset / 5))
     }
     return 0
   }

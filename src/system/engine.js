@@ -68,11 +68,11 @@ export class StockMarketEngine {
     })
     //根据随机数模拟市场不确定性
     const uncertaintyFactor = Math.random()
-    if (uncertaintyFactor < 0.05) {
+    if (uncertaintyFactor < 0.1) {
       //5%的概率触发黑天鹅事件(价格下跌1%)
       this.price = this.price * 0.01
       console.log('Black Swan Event: Price Drop to 1%')
-    } else if (uncertaintyFactor > 0.95) {
+    } else if (uncertaintyFactor > 0.9) {
       //5%的概率触发大牛市事件(价格上涨300%)
       this.price = this.price * 3
       console.log('Big Bull Market: Price Up to 300%')

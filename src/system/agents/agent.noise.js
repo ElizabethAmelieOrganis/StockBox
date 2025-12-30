@@ -2,7 +2,7 @@ import { Agent } from './agent.base.js'
 
 //基于基本agent的纯随机噪声类
 export class NoiseAgent extends Agent {
-  constructor(id, type = 'trend', initialCash = 1000) {
+  constructor(id, type = 'noise', initialCash = 1000) {
     super(id, type, initialCash)
   }
   //随机噪声策略,简单版本
