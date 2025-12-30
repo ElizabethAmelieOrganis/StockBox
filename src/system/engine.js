@@ -1,4 +1,4 @@
-import { ValueAgent, TrendAgent, NoiseAgent } from './agents'
+import { ValueAgent, TrendAgent, NoiseAgent, RiskAgent, Consortium } from './agents'
 
 import {
   independentEmotionUpdate,
@@ -25,6 +25,22 @@ export class StockMarketEngine {
       this.agents.push(new ValueAgent(`ValueAgent${i}`, 'value'))
       this.agents.push(new TrendAgent(`TrendAgent${i}`, 'trend'))
       this.agents.push(new NoiseAgent(`NoiseAgent${i}`, 'noise'))
+      this.agents.push(new RiskAgent(`RiskAgent${i}`, 'risk'))
+    }
+  }
+  initConsortiums(count) {
+    for (let i = 0; i < count; i++) {
+      const c = new Consortium(`Consortium${i}`, 'consortium', 300000)
+      const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min
+      const vCount = rand(2, 6)
+      const tCount = rand(1, 3)
+      const nCount = rand(1, 5)
+      const rCount = rand(0, 3)
+      for (let k = 0; k < vCount; k++) c.addMember(new ValueAgent(`C${i}-V${k}`, 'value'))
+      for (let k = 0; k < tCount; k++) c.addMember(new TrendAgent(`C${i}-T${k}`, 'trend'))
+      for (let k = 0; k < nCount; k++) c.addMember(new NoiseAgent(`C${i}-N${k}`, 'noise'))
+      for (let k = 0; k < rCount; k++) c.addMember(new RiskAgent(`C${i}-R${k}`, 'risk'))
+      this.agents.push(c)
     }
   }
   //推进市场
@@ -107,7 +123,7 @@ export class StockMarketEngine {
     }
     //根据随机数模拟市场不确定性
     const uncertaintyFactor = Math.random()
-    if (uncertaintyFactor < 0.1) {
+    if (uncertaintyFactor < 0.4) {
       //5%的概率触发黑天鹅事件(价格下跌1%)
       this.price = this.price * 0.01
       console.log('Black Swan Event: Price Drop to 1%')
