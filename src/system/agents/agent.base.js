@@ -7,7 +7,7 @@ export class Agent {
     this.stock = 0 //stock:agent持有的股票,初始为0
     this.noiseOffset = Math.random() //noiseOffset:同类型agent的随机偏移量,用于增加agent个体差异
     this.averageCost = 0 //averageCost:持仓平均成本(加权平均),用于计算盈亏率
-    this.emotion = 0 //emotion:情感状态(数值)，用于影响行动概率
+    this.emotion = 0 //emotion:情感状态(数值),用于影响行动概率
     this.prevValue = 0
   }
   //agent决策

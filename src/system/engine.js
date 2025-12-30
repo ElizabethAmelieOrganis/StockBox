@@ -1,6 +1,11 @@
 import { ValueAgent, TrendAgent, NoiseAgent } from './agents'
 
-import { independentEmotionUpdate, BehavioralEmotionUpdate, clampEmotion } from './utils/emotion.js'
+import {
+  independentEmotionUpdate,
+  BehavioralEmotionUpdate,
+  clampEmotion,
+  collectiveEmotionalOrganization,
+} from './utils/emotion.js'
 
 //配置基本市场交易引擎
 export class StockMarketEngine {
@@ -44,7 +49,7 @@ export class StockMarketEngine {
     })
     //计算价格变化(价格变化由供需失衡决定)
     const imbalance = (totalDemand - totalSupply) / 100 //计算供需失衡比例(这里简单取100作为除数,可以根据需求调整)
-    //根据供需失衡比例，计算价格变化
+    //根据供需失衡比例,计算价格变化
     //计算方法为:新价格=旧价格*(1+失衡比例*0.1)(向下取整)
     //这里简单取0.1作为调整系数,防止价格过于动荡(可以根据需求调整)
     const prevPrice = this.price
@@ -95,6 +100,11 @@ export class StockMarketEngine {
       agent.emotion = BehavioralEmotionUpdate(this.behavioralList, agent.emotion) //行为情感更新
       agent.emotion = clampEmotion(agent.emotion)
     })
+    //群体情感行为(一维粒子群)
+    const groupUpdated = collectiveEmotionalOrganization(this.agents.map((a) => a.emotion))
+    for (let i = 0; i < this.agents.length; i++) {
+      this.agents[i].emotion = clampEmotion(groupUpdated[i])
+    }
     //根据随机数模拟市场不确定性
     const uncertaintyFactor = Math.random()
     if (uncertaintyFactor < 0.1) {

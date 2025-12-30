@@ -2,7 +2,7 @@ import { Agent } from './agent.base.js'
 import { emotionToProbability } from '../utils/emotion.js'
 //基于基本agent的纯随机噪声类
 export class NoiseAgent extends Agent {
-  constructor(id, type = 'noise', initialCash = 10000) {
+  constructor(id, type = 'noise', initialCash = 100) {
     super(id, type, initialCash)
   }
   //随机噪声策略,简单版本

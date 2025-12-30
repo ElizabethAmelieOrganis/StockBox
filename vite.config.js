@@ -16,13 +16,13 @@ export default defineConfig({
     vueDevTools(),
     AutoImport({
       resolvers: [
-        // 自动导入 Element Plus 相关函数，如：ElMessage, ElNotification
+        // 自动导入 Element Plus 相关函数,如：ElMessage, ElNotification
         ElementPlusResolver(),
       ],
     }),
     Components({
       resolvers: [
-        // 自动导入 Element Plus 相关组件，如：ElMessage, ElNotification
+        // 自动导入 Element Plus 相关组件,如：ElMessage, ElNotification
         ElementPlusResolver(),
       ],
     }),
