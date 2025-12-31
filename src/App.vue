@@ -57,7 +57,11 @@
                   ? '📈 Trend'
                   : row.type === 'noise'
                     ? '🎲 Noise'
-                    : '❓ Unknown'
+                    : row.type === 'risk'
+                      ? '🖊️ Risk'
+                      : row.type === 'consortium'
+                        ? '🏦 Consortium'
+                        : '❓ Unknown'
             }}
           </template>
         </el-table-column>
@@ -94,6 +98,7 @@ let chartInstance = null
 onMounted(() => {
   chartInstance = echarts.init(document.getElementById('chart'))
   engine.value.initAgents(25)
+  engine.value.initConsortiums(2)
   updateChart()
 })
 

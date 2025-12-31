@@ -1,4 +1,4 @@
-import { ValueAgent, TrendAgent, NoiseAgent } from './agents'
+import { ValueAgent, TrendAgent, NoiseAgent, RiskAgent, Consortium } from './agents'
 
 import {
   independentEmotionUpdate,
@@ -25,6 +25,22 @@ export class StockMarketEngine {
       this.agents.push(new ValueAgent(`ValueAgent${i}`, 'value'))
       this.agents.push(new TrendAgent(`TrendAgent${i}`, 'trend'))
       this.agents.push(new NoiseAgent(`NoiseAgent${i}`, 'noise'))
+      this.agents.push(new RiskAgent(`RiskAgent${i}`, 'risk'))
+    }
+  }
+  initConsortiums(count) {
+    for (let i = 0; i < count; i++) {
+      const c = new Consortium(`Consortium${i}`, 'consortium', 300000)
+      const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min
+      const vCount = rand(5, 8)
+      const tCount = rand(1, 4)
+      const rCount = rand(3, 6)
+      const nCount = rand(1, 2)
+      for (let k = 0; k < vCount; k++) c.addMember(new ValueAgent(`C${i}-V${k}`, 'value'))
+      for (let k = 0; k < tCount; k++) c.addMember(new TrendAgent(`C${i}-T${k}`, 'trend'))
+      for (let k = 0; k < rCount; k++) c.addMember(new RiskAgent(`C${i}-R${k}`, 'risk'))
+      for (let k = 0; k < nCount; k++) c.addMember(new NoiseAgent(`C${i}-N${i}`, 'noise'))
+      this.agents.push(c)
     }
   }
   //推进市场
@@ -56,7 +72,8 @@ export class StockMarketEngine {
     let newPrice = prevPrice * (1 + imbalance * 0.1)
     const maxDrop = prevPrice * 0.5
     if (newPrice < maxDrop) newPrice = maxDrop
-    this.price = Math.floor(Math.max(10, Math.min(3000, newPrice)))
+    this.price = Math.floor(Math.max(1, Math.min(3000, newPrice)))
+    //this.price = Math.floor(Math.max(1, newPrice))
     //将新价格添加到价格历史记录中
     this.priceHistory.push(this.price)
 
@@ -71,6 +88,13 @@ export class StockMarketEngine {
             this.priceHistory[this.priceHistory.length - 2] >
           0.5
         : false
+    const severeRise =
+      this.priceHistory.length >= 2
+        ? (this.priceHistory[this.priceHistory.length - 1] -
+            this.priceHistory[this.priceHistory.length - 2]) /
+            this.priceHistory[this.priceHistory.length - 2] >
+          0.5
+        : false
     //遍历所有智能体
     this.agents.forEach((agent) => {
       newValue = agent.cash + agent.stock * marketPrice
@@ -78,14 +102,17 @@ export class StockMarketEngine {
       agent.emotion = clampEmotion(agent.emotion)
       const tradeVolume = agent.decide(marketPrice, this.priceHistory) //重新计算交易量(根据当前价格与历史记录)
       if (tradeVolume > 0 && agent.cash >= marketPrice * tradeVolume) {
-        //当智能体有足够现金时,执行购买
-        //当交易量大于0时,为需求,执行购买
-        const newQty = agent.stock + tradeVolume //新持仓数量=旧数量+买入数量
-        const numerator = agent.averageCost * agent.stock + marketPrice * tradeVolume //加权成本=旧成本*旧数量+买入价*买入数量
-        agent.averageCost = newQty > 0 ? numerator / newQty : 0 //新的持仓平均成本=加权成本/新持仓数量
-        agent.cash -= marketPrice * tradeVolume
-        agent.stock += tradeVolume
-        this.behavioralList.push('buy') //记录购买行为
+        if (severeRise && Math.random() >= 0.5) {
+        } else {
+          //当智能体有足够现金时,执行购买
+          //当交易量大于0时,为需求,执行购买
+          const newQty = agent.stock + tradeVolume //新持仓数量=旧数量+买入数量
+          const numerator = agent.averageCost * agent.stock + marketPrice * tradeVolume //加权成本=旧成本*旧数量+买入价*买入数量
+          agent.averageCost = newQty > 0 ? numerator / newQty : 0 //新的持仓平均成本=加权成本/新持仓数量
+          agent.cash -= marketPrice * tradeVolume
+          agent.stock += tradeVolume
+          this.behavioralList.push('buy') //记录购买行为
+        }
       }
       if (tradeVolume < 0 && agent.stock >= -tradeVolume) {
         if (severeDrop && Math.random() >= 0.5) {
