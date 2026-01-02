@@ -1,3 +1,4 @@
+const ENGINE_VERSION = '0.1.0'
 import { ValueAgent, TrendAgent, NoiseAgent, RiskAgent, Consortium } from './agents'
 
 import {
@@ -6,6 +7,62 @@ import {
   clampEmotion,
   collectiveEmotionalOrganization,
 } from './utils/emotion.js'
+
+// 限价适配器：将原策略输出的数量转换为“带限价”的订单
+// 目的是在不重写各策略逻辑的前提下，引入报价差异，使成交更合理
+function computeQuote(agent, qty, price, history) {
+  // side：买入或卖出；absQty：绝对数量
+  const side = qty > 0 ? 'buy' : qty < 0 ? 'sell' : 'none'
+  const absQty = Math.abs(qty)
+  if (side === 'none' || absQty === 0) return { side, price, qty: 0 }
+  // 基础价差：不同类型有不同默认价差区间
+  let base =
+    agent.type === 'value'
+      ? 0.015
+      : agent.type === 'trend'
+        ? 0.01
+        : agent.type === 'risk'
+          ? 0.006
+          : agent.type === 'consortium'
+            ? 0.008
+            : 0.02
+  // 简单信号：动量与均值偏离
+  const prev = history.length >= 2 ? history[history.length - 2] : price
+  const momentum = prev > 0 ? (price - prev) / prev : 0
+  const ma5 = history.length >= 5 ? history.slice(-5).reduce((a, b) => a + b, 0) / 5 : price
+  const dev = ma5 > 0 ? (price - ma5) / ma5 : 0
+  // 情感映射到(0,1)区间；越高越积极
+  const a = 1 / (1 + Math.exp(-(agent.emotion || 0)))
+  // 随机扰动：根据个体噪声偏移生成轻度抖动
+  const jitter = (agent.noiseOffset - 0.5) * 0.2
+  // 估计波动率（RiskAgent），波动越大，价差越宽
+  const sigma = agent.ewmaVar ? Math.sqrt(agent.ewmaVar) : 0
+  // 合成价差 s：基础价差 × 信号调节 × 情感收敛 × 噪声
+  let s = base
+  if (agent.type === 'value') {
+    // 价值：偏离均值越多，越愿意靠近市价成交
+    s *= side === 'buy' ? 1 - 0.7 * Math.max(0, -dev) : 1 - 0.7 * Math.max(0, dev)
+  } else if (agent.type === 'trend') {
+    // 趋势：上涨时买入更积极，下跌时卖出更积极
+    s *= side === 'buy' ? 1 - 0.7 * Math.max(0, momentum) : 1 - 0.7 * Math.max(0, -momentum)
+  } else if (agent.type === 'risk') {
+    // 风险平价/风控：波动越大，扩大价差以降低成交概率
+    s *= 1 + 2.0 * sigma
+  }
+  // 情感收敛：情感越高，价差越收窄（更靠近市价）
+  s *= 1 - 0.4 * a
+  // 噪声扰动
+  s *= 1 + jitter
+  // 防止负价差
+  s = Math.max(0.0005, s)
+  // 生成限价：为保证可即时成交的可能性
+  // - 买单：使用高于市价的限价（愿意支付更高价格），满足限价>=市价即可成交
+  // - 卖单：使用低于市价的限价（愿意以更低价格出售），满足限价<=市价即可成交
+  const limitPrice = side === 'buy' ? price * (1 + s) : price * (1 - s)
+  // 简化处理：取整到整数价格
+  const limit = Math.max(1, Math.floor(limitPrice))
+  return { side, price: limit, qty: absQty * (side === 'buy' ? 1 : -1) }
+}
 
 //配置基本市场交易引擎
 export class StockMarketEngine {
@@ -101,25 +158,28 @@ export class StockMarketEngine {
       agent.emotion = independentEmotionUpdate(agent.prevValue ?? newValue, newValue, agent.emotion)
       agent.emotion = clampEmotion(agent.emotion)
       const tradeVolume = agent.decide(marketPrice, this.priceHistory) //重新计算交易量(根据当前价格与历史记录)
-      if (tradeVolume > 0 && agent.cash >= marketPrice * tradeVolume) {
-        if (severeRise && Math.random() >= 0.5) {
-        } else {
-          //当智能体有足够现金时,执行购买
-          //当交易量大于0时,为需求,执行购买
-          const newQty = agent.stock + tradeVolume //新持仓数量=旧数量+买入数量
-          const numerator = agent.averageCost * agent.stock + marketPrice * tradeVolume //加权成本=旧成本*旧数量+买入价*买入数量
+      // 生成限价订单（第一阶段：限价过滤，不做完整订单簿）
+      const quote = computeQuote(agent, tradeVolume, marketPrice, this.priceHistory)
+      if (quote.qty > 0 && agent.cash >= marketPrice * quote.qty) {
+        // 买入限价过滤：只有当限价>=市价时执行（愿意以当前市价成交）
+        const canBuyAtMarket = quote.price >= marketPrice
+        const blockedByRise = severeRise && Math.random() >= 0.5
+        if (canBuyAtMarket && !blockedByRise) {
+          const newQty = agent.stock + quote.qty //新持仓数量=旧数量+买入数量
+          const numerator = agent.averageCost * agent.stock + marketPrice * quote.qty //加权成本=旧成本*旧数量+买入价*买入数量
           agent.averageCost = newQty > 0 ? numerator / newQty : 0 //新的持仓平均成本=加权成本/新持仓数量
-          agent.cash -= marketPrice * tradeVolume
-          agent.stock += tradeVolume
+          agent.cash -= marketPrice * quote.qty
+          agent.stock += quote.qty
           this.behavioralList.push('buy') //记录购买行为
         }
       }
-      if (tradeVolume < 0 && agent.stock >= -tradeVolume) {
-        if (severeDrop && Math.random() >= 0.5) {
-        } else {
-          //当交易量小于0时,为供给,执行卖出
-          agent.cash += marketPrice * -tradeVolume
-          agent.stock += tradeVolume
+      if (quote.qty < 0 && agent.stock >= -quote.qty) {
+        // 卖出限价过滤：只有当限价<=市价时执行（愿意以当前市价成交）
+        const canSellAtMarket = quote.price <= marketPrice
+        const blockedByDrop = severeDrop && Math.random() >= 0.5
+        if (canSellAtMarket && !blockedByDrop) {
+          agent.cash += marketPrice * -quote.qty
+          agent.stock += quote.qty
           if (agent.stock <= 0) agent.averageCost = 0 //清仓后平均成本归零；部分卖出不改变平均成本
           this.behavioralList.push('sell') //记录卖出行为
         }

@@ -4,4 +4,10 @@ function ReLu(x) {
 function Sigmoid(x) {
   return 1 / (1 + Math.exp(-x))
 }
-export { ReLu, Sigmoid }
+function FillAgentToList(agentList, agent, count) {
+  for (let i = 0; i < count; i++) {
+    agentList.push(agent)
+  }
+}
+
+export { ReLu, Sigmoid, FillAgentToList }
